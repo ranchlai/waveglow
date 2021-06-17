@@ -152,6 +152,7 @@ class WN(torch.nn.Module):
 
     def forward(self, forward_input):
         audio, spect = forward_input
+        audio = audio.to(spect.device)
         audio = self.start(audio)
         output = torch.zeros_like(audio)
         n_channels_tensor = torch.IntTensor([self.n_channels])
@@ -258,13 +259,14 @@ class WaveGlow(torch.nn.Module):
         spect = spect.contiguous().view(spect.size(0), spect.size(1), -1).permute(0, 2, 1)
 
         if spect.type() == 'torch.cuda.HalfTensor':
-            audio = torch.cuda.HalfTensor(spect.size(0),
+            audio = torch.HalfTensor(spect.size(0),
                                           self.n_remaining_channels,
                                           spect.size(2)).normal_()
         else:
-            audio = torch.cuda.FloatTensor(spect.size(0),
+            audio = torch.FloatTensor(spect.size(0),
                                            self.n_remaining_channels,
                                            spect.size(2)).normal_()
+            audio = audio.to(spect.device)
 
         audio = torch.autograd.Variable(sigma*audio)
 
@@ -287,6 +289,7 @@ class WaveGlow(torch.nn.Module):
                     z = torch.cuda.HalfTensor(spect.size(0), self.n_early_size, spect.size(2)).normal_()
                 else:
                     z = torch.cuda.FloatTensor(spect.size(0), self.n_early_size, spect.size(2)).normal_()
+                z = z.to(audio.device)    
                 audio = torch.cat((sigma*z, audio),1)
 
         audio = audio.permute(0,2,1).contiguous().view(audio.size(0), -1).data
